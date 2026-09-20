@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const PRIMARY = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
 /** 1차 모델이 과부하(503)·한도(429)일 때 시도할 모델들 (쉼표 구분) */
-const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS ?? "gemini-3.6-flash-lite,gemini-2.5-flash-lite")
+const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS ?? "gemini-3.5-flash-lite,gemini-3.5-flash")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -53,6 +53,9 @@ async function callOnce<T>(model: string, systemInstruction: string, userText: s
 export async function generateJson<T>(systemInstruction: string, userText: string): Promise<T> {
   const models = [PRIMARY, ...FALLBACKS.filter((m) => m !== PRIMARY)];
   let lastErr: unknown;
+  /** 과부하·한도 오류를 한 번이라도 만났는지 — 최종 안내 문구 결정용 */
+  let sawBusy = false;
+  let sawMissing = false;
 
   for (const model of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -61,16 +64,19 @@ export async function generateJson<T>(systemInstruction: string, userText: strin
       } catch (e) {
         lastErr = e;
         const st = statusOf(e);
-        if (st === 404) break; // 이 모델은 없음 → 다음 모델
+        if (st === 404) { sawMissing = true; break; } // 이 모델은 없음 → 다음 모델
         if (!RETRYABLE.has(st ?? 0)) throw e; // 키 오류 등은 즉시 실패
+        sawBusy = true;
         if (attempt < 2) await sleep(attempt === 0 ? 800 : 2000);
       }
     }
   }
 
-  const st = statusOf(lastErr);
-  if (st === 503 || st === 429) {
+  if (sawBusy) {
     throw new Error("AI 서버가 지금 붐벼요. 10초 뒤에 다시 눌러주세요. (입력한 내용은 그대로 남아 있습니다)");
+  }
+  if (sawMissing) {
+    throw new Error(`설정된 AI 모델(${models.join(", ")})을 찾을 수 없어요. GEMINI_MODEL 환경변수를 확인해 주세요.`);
   }
   throw lastErr instanceof Error ? lastErr : new Error("AI 처리 실패");
 }
