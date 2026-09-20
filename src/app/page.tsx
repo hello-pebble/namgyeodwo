@@ -8,6 +8,7 @@ import Recorder from "@/components/Recorder";
 import Timeline from "@/components/Timeline";
 import AppIcon from "@/components/AppIcon";
 import { loadLearnings, loadRecords, saveLearnings, saveRecords } from "@/lib/storage";
+import { clearSample, hasSample, loadSample } from "@/lib/sample";
 import type { LearningEntry, RecordEntry } from "@/lib/types";
 
 export default function Home() {
@@ -23,10 +24,12 @@ function HomeInner() {
   const [date, setDate] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [sample, setSample] = useState(false);
 
   useEffect(() => {
     setRecords(loadRecords());
     setLearnCount(loadLearnings().length);
+    setSample(hasSample());
     setDate(new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" }));
     setReady(true);
   }, []);
@@ -34,6 +37,12 @@ function HomeInner() {
   function update(next: RecordEntry[]) {
     saveRecords(next);
     setRecords(next);
+  }
+
+  function refresh() {
+    setRecords(loadRecords());
+    setLearnCount(loadLearnings().length);
+    setSample(hasSample());
   }
 
   function addLearning(entry: LearningEntry) {
@@ -54,6 +63,8 @@ function HomeInner() {
 
     {saved && <div className="saved-message" role="status"><AppIcon name="check" /><span>잘 남겨뒀어! 보관함이나 배운 것에서 언제든 꺼내봐.</span><button type="button" aria-label="저장 알림 닫기" onClick={() => setSaved(false)}><AppIcon name="close" width="16" height="16" /></button></div>}
     {error && <p className="form-error" role="alert">{error}</p>}
+    {sample && <div className="sample-banner" role="status"><AppIcon name="archive" width="15" height="15" /><span>지금 <b>샘플 기록</b>을 보고 있어요. 보관함·배운 것·리포트를 둘러본 뒤 지워도 돼요.</span><button type="button" onClick={() => { clearSample(); refresh(); }}>샘플 지우기</button></div>}
+    {ready && !sample && records.length === 0 && learnCount === 0 && <div className="sample-invite"><span><b>처음이세요?</b> 샘플 기록 7건을 넣어 연결·리포트를 바로 둘러볼 수 있어요.</span><button type="button" onClick={() => { loadSample(); refresh(); }}><AppIcon name="arrow" width="14" height="14" />샘플로 둘러보기</button></div>}
     <div className="home-workspace">
       <Recorder initialMode={initialMode} onSave={(entry) => { update([entry, ...records]); setSaved(true); }} onSaveLearning={addLearning} />
       <aside className="recent-panel" aria-labelledby="recent-title">

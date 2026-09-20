@@ -101,6 +101,16 @@ svg { flex-shrink: 0; }
 .attachment-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; }
 .attachment-list > span { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 5px 8px; border-radius: 5px; background: #f3f4f6; font-size: 10px; overflow-wrap: anywhere; }
 .attachment-list button { border: 0; background: none; padding: 3px; }
+.sample-invite, .sample-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -7px 0 20px; padding: 12px 16px; border-radius: 10px; font-size: 12px; }
+.sample-invite { border: 1px dashed #e6d39a; background: #fffaea; color: #6c5830; }
+.sample-invite b, .sample-banner b { font-weight: 700; }
+.sample-invite button { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; min-height: 34px; padding: 7px 13px; border: 0; border-radius: 8px; background: var(--accent); color: #4a3c1c; font-size: 11px; font-weight: 700; }
+.sample-invite button:hover { background: #f9bf2e; }
+.sample-banner { background: #edf1f9; color: #59657e; }
+.sample-banner svg { color: #8396b8; }
+.sample-banner button { margin-left: auto; min-height: 30px; padding: 5px 11px; border: 1px solid #c9d3e6; border-radius: 7px; background: #fff; color: #4e5c7a; font-size: 11px; font-weight: 650; }
+.sample-banner button:hover { background: #f4f7fd; }
+@media (max-width: 460px) { .sample-invite button, .sample-banner button { margin-left: 0; width: 100%; justify-content: center; } }
 .saved-message { display: flex; align-items: center; gap: 10px; margin: -7px 0 20px; padding: 12px 16px; border-radius: 10px; background: #e9f3ec; color: #4b7555; font-size: 12px; }
 .saved-message > button { display: grid; place-items: center; margin-left: auto; padding: 4px; border: 0; background: transparent; color: inherit; }
 
