@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AppIcon from "./AppIcon";
 import type { RecordEntry, StructuredRecord } from "@/lib/types";
 
 const FIELD_LABEL: Record<string, string> = {
@@ -8,9 +9,9 @@ const FIELD_LABEL: Record<string, string> = {
   where: "장소",
   who: "관련자",
   what: "무슨 일",
-  quote: "발언·행위 원문",
-  witnesses: "목격자",
-  evidence: "증거",
+  quote: "기억할 말",
+  witnesses: "함께한 사람",
+  evidence: "남은 자료",
 };
 
 const EXAMPLES = [
@@ -126,7 +127,12 @@ export default function Recorder({ onSave }: Props) {
       createdAt: new Date().toISOString(),
       attachments: files,
     };
-    onSave(entry);
+    try {
+      onSave(entry);
+    } catch {
+      setError("저장하지 못했어요. 브라우저 저장 공간을 확인하고 다시 시도해 주세요. 작성한 내용은 그대로 있어요.");
+      return;
+    }
     setRaw("");
     setStructured(null);
     setAnswers("");
@@ -143,27 +149,30 @@ export default function Recorder({ onSave }: Props) {
   const canSave = structured !== null && structured.missing.length === 0;
 
   return (
-    <section className="record-card" aria-label="새 기록 남기기">
+    <section className="record-card" aria-label="새 기록 남기기" aria-busy={loading}>
+      <div className="composer-topline"><span><AppIcon name="write" width="16" height="16" />새로운 기록</span><div className="record-progress" aria-label={structured ? "2단계: 내용 확인" : "1단계: 기록 작성"}><span className={!structured ? "current" : ""}>작성</span><AppIcon name="chevron" width="11" height="11" /><span className={structured ? "current" : ""}>확인</span></div></div>
       {!structured ? (
         <>
-          <div className="record-card-heading"><div><h2>새 기록 남기기</h2><p>지금 떠오르는 내용을 편하게 적어보세요.</p></div><span className="card-symbol" aria-hidden="true">✎</span></div>
-          <label htmlFor="record-raw" className="record-label">어떤 일이 있었나요?</label>
+          <div className="record-card-heading"><h2>지금, 남겨두기</h2><p>다듬지 않아도 돼요. 기억나는 그대로 적어요.</p></div>
+          <label htmlFor="record-raw" className="sr-only">기록 내용</label>
           <textarea
             id="record-raw"
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
-            placeholder="예: 오늘 팀 회의에서 금요일까지 기획안을 공유하기로 했어요."
-            rows={4}
+            placeholder="오늘 있었던 일, 잊고 싶지 않은 말…"
+            rows={5}
+            disabled={loading}
             className="record-textarea"
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && raw.trim()) structure(false);
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && raw.trim() && !loading) { e.preventDefault(); structure(false); }
             }}
           />
-          <div className="examples-row"><span className="examples-title">이런 것도 남겨요</span>
+          <div className="examples-row"><span className="examples-title">예시 보기</span>
             {EXAMPLES.map((ex, index) => (
               <button
                 key={ex}
                 type="button"
+                disabled={loading}
                 onClick={() => setRaw(ex)}
                 className="example-chip"
                 title={ex}
@@ -181,8 +190,8 @@ export default function Recorder({ onSave }: Props) {
                 className="hidden"
                 onChange={(e) => setFiles(Array.from(e.target.files ?? []).map((f) => f.name))}
               />
-              <button type="button" onClick={() => fileRef.current?.click()}>＋ 자료 이름 남기기</button>
-              <span>{files.length > 0 ? `${files.length}개 선택됨 · 파일 이름만 저장돼요` : "파일 자체는 저장되지 않고 이름만 기록돼요"}</span>
+              <button type="button" disabled={loading} onClick={() => fileRef.current?.click()}><AppIcon name="attach" width="15" height="15" />자료 이름 추가</button>
+              <span>{files.length > 0 ? `${files.length}개 선택됨 · 이름만 저장` : "사진·녹음의 파일 이름만 기록해요"}</span>
             </div>
             <button
               type="button"
@@ -190,13 +199,14 @@ export default function Recorder({ onSave }: Props) {
               onClick={() => structure(false)}
               className="primary-action"
             >
-              {loading ? "정리 중…" : "기록 정리하기"}<span aria-hidden="true">↗</span>
+              {loading ? "정리하는 중…" : "내용 정리하기"}<AppIcon name="arrow" width="17" height="17" />
             </button>
           </div>
+          {files.length > 0 && <div className="attachment-list">{files.map((file, index) => <span key={`${file}-${index}`}>{file}<button type="button" disabled={loading} aria-label={`${file} 이름 빼기`} onClick={() => setFiles(files.filter((_, fileIndex) => fileIndex !== index))}><AppIcon name="close" width="12" height="12" /></button></span>)}</div>}
         </>
       ) : (
         <>
-          <div className="review-intro"><div><h2>정리한 내용을 확인해 주세요</h2><p>사실과 다른 부분은 바로 고칠 수 있어요.</p></div><span className="category-pill">{structured.category}</span></div>
+          <div className="review-intro"><div><h2>이렇게 정리했어요</h2><p>맞는지 확인하고 보관함에 남겨주세요.</p></div><span className="category-pill">{structured.category}</span></div>
           <p className="review-summary">{structured.summary}</p>
           <p className="review-help">저장 후에는 수정할 수 없어요. 빈 칸은 직접 채우거나 ‘없음’·‘기억 안 남’을 눌러 확인해 주세요.</p>
           <dl className="review-fields">
@@ -207,6 +217,7 @@ export default function Recorder({ onSave }: Props) {
                   <dt>{FIELD_LABEL[k]}</dt>
                   <dd>
                     <input
+                      disabled={loading}
                       aria-label={FIELD_LABEL[k]}
                       value={missing && structured[k] === "미상" ? "" : structured[k]}
                       placeholder={missing ? (k === "who" ? "예: 개발2팀 김○○ 팀장 / 안경 쓴 남자 직원" : k === "when" ? "예: 오늘 오후 3시 / 어제 / 2026-09-18" : "미상 — 기억나면 적어주세요") : ""}
@@ -223,6 +234,7 @@ export default function Recorder({ onSave }: Props) {
                       <>
                         <button
                           type="button"
+                          disabled={loading}
                           onClick={() => editField(k, "없음")}
                           title="해당 사항 없음 (예: 혼자 있었음, 남은 자료 없음)"
                           className="small-choice"
@@ -231,6 +243,7 @@ export default function Recorder({ onSave }: Props) {
                         </button>
                         <button
                           type="button"
+                          disabled={loading}
                           onClick={() => editField(k, "기억 안 남")}
                           title="있었지만 기억나지 않음"
                           className="small-choice"
@@ -254,10 +267,12 @@ export default function Recorder({ onSave }: Props) {
                 ))}
               </ul>
               <textarea
+                aria-label="추가로 기억나는 내용"
+                disabled={loading}
                 value={answers}
                 onChange={(e) => setAnswers(e.target.value)}
                 rows={2}
-                placeholder="기억나는 대로. 모르면 그냥 저장해도 됩니다."
+                placeholder="기억나는 내용을 더 적어주세요. 모르는 항목은 위에서 ‘기억 안 남’을 눌러주세요."
               />
               <button
                 type="button"
@@ -270,7 +285,7 @@ export default function Recorder({ onSave }: Props) {
           )}
 
           <div className="review-actions">
-            <button type="button" onClick={reset} className="quiet-action">
+            <button type="button" disabled={loading} onClick={reset} className="quiet-action">
               다시 쓰기
             </button>
             <div className="flex items-center gap-3">
@@ -285,7 +300,7 @@ export default function Recorder({ onSave }: Props) {
                 onClick={save}
                 className="primary-action"
               >
-                {loading ? "저장 중…" : "기록 저장하기"}
+                {loading ? "저장하는 중…" : "보관함에 남겨두기"}<AppIcon name="check" width="17" height="17" />
               </button>
             </div>
           </div>

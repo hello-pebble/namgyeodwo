@@ -1,50 +1,37 @@
 "use client";
 
+import AppIcon from "./AppIcon";
 import type { RecordEntry } from "@/lib/types";
 
 function formatWhen(value: string) {
-  if (!value || value === "미상") return { date: "날짜 미상", detail: "일시 미상" };
+  if (!value || value === "미상") return "날짜 미상";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { date: value, detail: value };
-  return {
-    date: date.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }),
-    detail: date.toLocaleString("ko-KR", { year: "numeric", month: "long", day: "numeric", ...(value.includes("T") ? { hour: "2-digit", minute: "2-digit" } : {}) }),
-  };
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 }
-
-const KNOWN = (value: string) => value && !["미상", "기억 안 남", "없음"].includes(value);
 
 interface Props {
   records: RecordEntry[];
   onDelete: (id: string) => void;
+  compact?: boolean;
+  filtered?: boolean;
 }
 
-export default function Timeline({ records, onDelete }: Props) {
-  if (records.length === 0) {
-    return <div className="empty-records"><span className="empty-records-icon" aria-hidden="true">✎</span><h3>아직 남겨둔 기록이 없어요</h3><p>위에서 오늘의 일을 한 줄로 남겨보세요. 첫 기록부터 차곡차곡 모아둘게요.</p></div>;
-  }
+export default function Timeline({ records, onDelete, compact = false, filtered = false }: Props) {
+  if (records.length === 0) return <div className={`empty-records ${compact ? "compact-empty" : ""}`}><div className="empty-drawing" aria-hidden="true"><AppIcon name={filtered ? "search" : "archive"} width="34" height="34" /><span /></div><h3>{filtered ? "찾는 기록이 없어요" : "첫 기록을 기다리고 있어요"}</h3><p>{filtered ? "다른 단어로 찾거나 분류를 바꿔보세요." : "작은 일부터 하나씩.\n남겨둔 순간이 여기에 모여요."}</p></div>;
 
-  const sorted = records.slice().sort((a, b) => (b.when || b.createdAt).localeCompare(a.when || a.createdAt));
-
-  return (
-    <ol className="timeline-list">
-      {sorted.map((record) => {
-        const when = formatWhen(record.when);
-        return <li className="timeline-item" key={record.id}>
-          <div className="timeline-date">{when.date}</div>
-          <article className="timeline-card">
-            <div className="timeline-card-top"><span>{when.detail}{KNOWN(record.where) ? ` · ${record.where}` : ""}</span><span className="category-pill">{record.category}</span></div>
-            <h3>{record.summary}</h3>
-            {KNOWN(record.quote) && <blockquote>“{record.quote}”</blockquote>}
-            <div className="timeline-meta">
-              {KNOWN(record.who) && <span>관련자 {record.who}</span>}
-              {KNOWN(record.witnesses) && <span>함께한 사람 {record.witnesses}</span>}
-              {record.attachments.length > 0 && <span>자료 이름 {record.attachments.join(", ")}</span>}
-            </div>
-            <div className="timeline-bottom"><span>기록한 시각 {new Date(record.createdAt).toLocaleString("ko-KR")}</span><button type="button" onClick={() => onDelete(record.id)} aria-label={`${record.summary} 삭제`}>삭제</button></div>
-          </article>
-        </li>;
-      })}
-    </ol>
-  );
+  return <ol className={compact ? "timeline-list compact-timeline" : "timeline-list"}>
+    {records.map((record) => <li key={record.id}>
+      <details className="timeline-card">
+        <summary><div className="timeline-card-top"><span className="category-pill">{record.category}</span><span className="record-date">{formatWhen(record.when)}</span></div><div className="record-summary-line"><h3>{record.summary}</h3><AppIcon name="chevron" width="16" height="16" /></div><p className="record-preview">{record.raw}</p></summary>
+        <div className="record-details"><dl>{([
+          ["일시", record.when], ["장소", record.where], ["관련자", record.who], ["내용", record.what], ["기억할 말", record.quote], ["함께한 사람", record.witnesses], ["남은 자료", record.evidence],
+        ] as const).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "미상"}</dd></div>)}</dl>
+          <div className="original-note"><h4>처음 남긴 글</h4><p>{record.raw}</p></div>
+          {record.attachments.length > 0 && <p className="record-attachments"><AppIcon name="attach" width="13" height="13" />자료 이름: {record.attachments.join(", ")}</p>}
+          <div className="timeline-bottom"><span>남긴 시각 {new Date(record.createdAt).toLocaleString("ko-KR")}</span><button type="button" onClick={() => onDelete(record.id)} aria-label={`${record.summary} 삭제`}><AppIcon name="trash" width="13" height="13" />삭제</button></div>
+        </div>
+      </details>
+    </li>)}
+  </ol>;
 }

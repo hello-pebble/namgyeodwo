@@ -11,7 +11,7 @@ const navigation: { href: string; label: string; icon: IconName }[] = [
 ];
 
 export function SunglassesMark() {
-  return <svg className="sunglasses-mark" width="37" height="30" viewBox="0 0 42 32" fill="none" aria-hidden="true"><path d="M3 10c1-6 7-8 11-5 4-5 11-5 15 0 6-1 10 3 10 8v9H3Z" fill="currentColor" /><path d="M4 12h12v4a5 5 0 0 1-10 0Zm22 0h12l-2 5a5 5 0 0 1-10-1Z" fill="#20252C" /><path d="M15 13c4-3 8-3 12 0" stroke="#20252C" strokeWidth="3" /><path d="m19 21 3 3 3-3" fill="#20252C" /></svg>;
+  return <svg className="sunglasses-mark" width="37" height="30" viewBox="0 0 42 32" fill="none" aria-hidden="true"><path d="M3 10c1-6 7-8 11-5 4-5 11-5 15 0 6-1 10 3 10 8v9H3Z" fill="currentColor" /><path d="M4 11h13v4.5a5.5 5.5 0 0 1-11 0Zm21 0h13l-2 5a5.5 5.5 0 0 1-11-.5Z" fill="#111418" /><path d="M15 13.5c4-3.5 8-3.5 12 0" stroke="#111418" strokeWidth="3.5" strokeLinecap="round" /><path d="m18.5 21.5 3.5 3.5 3.5-3.5Z" fill="#111418" /></svg>;
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
