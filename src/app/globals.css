@@ -123,6 +123,44 @@ svg { flex-shrink: 0; }
 .report-shortcut:hover { background: #e6edf9; }
 .home-storage-note, .library-footnote { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 24px 0 0; color: #a5aab3; font-size: 10px; line-height: 1.7; text-align: center; }
 
+/* ---- 배운 것 ---- */
+.mode-switch { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: #f3f4f6; }
+.mode-switch button { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 11px; border: 0; border-radius: 7px; background: transparent; color: #8b909a; font-size: 11px; font-weight: 600; }
+.mode-switch button.is-active { background: #fff; color: #3a3527; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.mode-switch button:disabled { opacity: .6; }
+.kind-hint { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; border: 1px solid #e5e9f2; border-radius: 10px; background: #edf1f9; color: #59657e; font-size: 11px; line-height: 1.6; }
+.kind-hint svg { color: #8396b8; }
+.kind-hint button { margin-left: auto; min-height: 30px; padding: 5px 11px; border: 1px solid #c9d3e6; border-radius: 7px; background: #fff; color: #4e5c7a; font-size: 11px; font-weight: 650; }
+.kind-hint button:hover:not(:disabled) { background: #f4f7fd; }
+.review-textarea { width: 100%; min-height: 60px; padding: 8px 10px; border: 1px solid #e7e9ed; border-radius: 7px; background: #fafbfc; color: #4b525c; font-size: 11px; line-height: 1.7; outline: none; resize: vertical; }
+.review-textarea:focus { border-color: #d7b75d; }
+.learn-shortcut { margin-top: 15px; }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 18px; }
+.tag-cloud button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #868c97; font-size: 10px; }
+.tag-cloud button span { color: #b3b8c1; font-size: 9px; }
+.tag-cloud button.is-selected { background: #fff0c0; color: #8f783a; border-color: #edd79b; font-weight: 650; }
+.wiki-section { margin-bottom: 26px; }
+.wiki-topic { display: flex; align-items: center; gap: 7px; margin: 0 0 11px; font-size: 13px; font-weight: 700; letter-spacing: -.03em; color: #59606b; }
+.wiki-topic span { color: #b39a58; font-size: 12px; font-weight: 600; }
+.wiki-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.wiki-card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 18px 19px 15px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+.wiki-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.wiki-card h3 { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.5; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.wiki-claim { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fffaec; color: #4b4635; font-size: 12px; line-height: 1.7; }
+.wiki-points { margin: 0; padding-left: 16px; color: #6d7480; font-size: 11px; line-height: 1.75; }
+.wiki-points li { margin-bottom: 2px; }
+.wiki-thought { margin: 0; color: #7c7051; font-size: 11px; line-height: 1.7; }
+.wiki-thought b { color: #a18c51; font-weight: 650; margin-right: 4px; }
+.wiki-card footer { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid #f1f2f4; font-size: 10px; color: #979da7; }
+.wiki-source { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.wiki-source a { color: #6f86b0; text-decoration: underline; }
+.wiki-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.wiki-tags button { border: 0; padding: 1px 4px; background: none; color: #a4946b; font-size: 10px; border-radius: 4px; }
+.wiki-tags button.is-selected, .wiki-tags button:hover { background: #fff0c0; color: #8f783a; }
+.wiki-delete { margin-left: auto; border: 0; background: none; padding: 4px; color: #bd9790; }
+.wiki-delete:hover { color: var(--warn); }
+@media (max-width: 640px) { .wiki-grid { grid-template-columns: 1fr; } .mode-switch button { padding-inline: 9px; } .kind-hint button { margin-left: 0; } }
+
 .review-intro { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 17px; }
 .review-intro h2 { margin: 0 0 7px; font-size: 20px; letter-spacing: -.05em; font-weight: 750; }
 .review-intro p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
@@ -255,7 +293,7 @@ svg { flex-shrink: 0; }
   .topbar-help { padding: 8px; }
   .topbar-help svg { width: 20px; height: 20px; }
   .app-main { padding: 26px 24px 105px; }
-  .mobile-navigation { display: grid; grid-template-columns: repeat(3,1fr); position: fixed; inset: auto 0 0; z-index: 40; min-height: 72px; padding: 8px 16px max(9px, env(safe-area-inset-bottom)); border-top: 1px solid #ebedf1; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
+  .mobile-navigation { display: grid; grid-template-columns: repeat(4,1fr); position: fixed; inset: auto 0 0; z-index: 40; min-height: 72px; padding: 8px 16px max(9px, env(safe-area-inset-bottom)); border-top: 1px solid #ebedf1; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
   .mobile-navigation > a { display: flex; align-items: center; flex-direction: column; gap: 5px; color: #a1a7b2; font-size: 10px; font-weight: 600; }
   .mobile-navigation > a > span { display: grid; place-items: center; width: 51px; height: 29px; border-radius: 10px; }
   .mobile-navigation > a.is-active { color: #746338; }
@@ -323,7 +361,45 @@ svg { flex-shrink: 0; }
   .file-control { gap: 4px; font-size: 9px; }
   .file-control button { min-height: 28px; font-size: 11px; }
   .primary-action { min-height: 43px; }
-  .review-intro { flex-wrap: wrap; }
+  /* ---- 배운 것 ---- */
+.mode-switch { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: #f3f4f6; }
+.mode-switch button { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 5px 11px; border: 0; border-radius: 7px; background: transparent; color: #8b909a; font-size: 11px; font-weight: 600; }
+.mode-switch button.is-active { background: #fff; color: #3a3527; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.mode-switch button:disabled { opacity: .6; }
+.kind-hint { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; border: 1px solid #e5e9f2; border-radius: 10px; background: #edf1f9; color: #59657e; font-size: 11px; line-height: 1.6; }
+.kind-hint svg { color: #8396b8; }
+.kind-hint button { margin-left: auto; min-height: 30px; padding: 5px 11px; border: 1px solid #c9d3e6; border-radius: 7px; background: #fff; color: #4e5c7a; font-size: 11px; font-weight: 650; }
+.kind-hint button:hover:not(:disabled) { background: #f4f7fd; }
+.review-textarea { width: 100%; min-height: 60px; padding: 8px 10px; border: 1px solid #e7e9ed; border-radius: 7px; background: #fafbfc; color: #4b525c; font-size: 11px; line-height: 1.7; outline: none; resize: vertical; }
+.review-textarea:focus { border-color: #d7b75d; }
+.learn-shortcut { margin-top: 15px; }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 18px; }
+.tag-cloud button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #868c97; font-size: 10px; }
+.tag-cloud button span { color: #b3b8c1; font-size: 9px; }
+.tag-cloud button.is-selected { background: #fff0c0; color: #8f783a; border-color: #edd79b; font-weight: 650; }
+.wiki-section { margin-bottom: 26px; }
+.wiki-topic { display: flex; align-items: center; gap: 7px; margin: 0 0 11px; font-size: 13px; font-weight: 700; letter-spacing: -.03em; color: #59606b; }
+.wiki-topic span { color: #b39a58; font-size: 12px; font-weight: 600; }
+.wiki-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.wiki-card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 18px 19px 15px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+.wiki-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.wiki-card h3 { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.5; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.wiki-claim { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fffaec; color: #4b4635; font-size: 12px; line-height: 1.7; }
+.wiki-points { margin: 0; padding-left: 16px; color: #6d7480; font-size: 11px; line-height: 1.75; }
+.wiki-points li { margin-bottom: 2px; }
+.wiki-thought { margin: 0; color: #7c7051; font-size: 11px; line-height: 1.7; }
+.wiki-thought b { color: #a18c51; font-weight: 650; margin-right: 4px; }
+.wiki-card footer { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid #f1f2f4; font-size: 10px; color: #979da7; }
+.wiki-source { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.wiki-source a { color: #6f86b0; text-decoration: underline; }
+.wiki-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.wiki-tags button { border: 0; padding: 1px 4px; background: none; color: #a4946b; font-size: 10px; border-radius: 4px; }
+.wiki-tags button.is-selected, .wiki-tags button:hover { background: #fff0c0; color: #8f783a; }
+.wiki-delete { margin-left: auto; border: 0; background: none; padding: 4px; color: #bd9790; }
+.wiki-delete:hover { color: var(--warn); }
+@media (max-width: 640px) { .wiki-grid { grid-template-columns: 1fr; } .mode-switch button { padding-inline: 9px; } .kind-hint button { margin-left: 0; } }
+
+.review-intro { flex-wrap: wrap; }
   .review-field { grid-template-columns: 65px minmax(0,1fr); gap: 6px; }
   .review-actions { align-items: stretch; }
   .review-actions > div { justify-content: flex-end; }

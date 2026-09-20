@@ -2,7 +2,17 @@
 
 import { useRef, useState } from "react";
 import AppIcon from "./AppIcon";
-import type { RecordEntry, StructuredRecord } from "@/lib/types";
+import LearningReview from "./LearningReview";
+import type { LearningEntry, RecordEntry, StructuredLearning, StructuredRecord } from "@/lib/types";
+
+type Mode = "event" | "learning";
+
+const LEARN_EXAMPLES = [
+  "쇼츠에서 봤는데 PR은 300줄 넘기지 말래. 리뷰어가 집중 못 한대",
+  "책에서 읽음: 월급 들어오면 저축 먼저 빼고 남은 걸로 쓰기",
+  "유튜브 요리 채널, 파스타 면수는 바닷물처럼 짜게. 소스에도 면수 넣기",
+];
+const LEARN_EXAMPLE_LABELS = ["개발", "돈", "생활"];
 
 const FIELD_LABEL: Record<string, string> = {
   when: "일시",
@@ -51,9 +61,14 @@ function normalizeWhen(v: string): string {
 
 interface Props {
   onSave: (entry: RecordEntry) => void;
+  onSaveLearning: (entry: LearningEntry) => void;
+  initialMode?: Mode;
 }
 
-export default function Recorder({ onSave }: Props) {
+export default function Recorder({ onSave, onSaveLearning, initialMode = "event" }: Props) {
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [learning, setLearning] = useState<StructuredLearning | null>(null);
+  const [myThought, setMyThought] = useState("");
   const [raw, setRaw] = useState("");
   const [answers, setAnswers] = useState("");
   const [structured, setStructured] = useState<StructuredRecord | null>(null);
@@ -85,6 +100,67 @@ export default function Recorder({ onSave }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function structureLearning(withAnswers: boolean) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw, previous: withAnswers ? learning : undefined, answers: withAnswers ? answers : undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "실패");
+      setLearning(data as StructuredLearning);
+      setStructured(null);
+      setAnswers("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveLearning() {
+    if (!learning || learning.missing.length > 0) return;
+    setLoading(true);
+    setError(null);
+    let final: StructuredLearning = learning;
+    try {
+      const res = await fetch("/api/learn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw, previous: learning, finalize: true }),
+      });
+      const data = await res.json();
+      if (res.ok) final = { ...(data as StructuredLearning), missing: [], questions: [] };
+    } catch {
+      /* 교정 생략 */
+    } finally {
+      setLoading(false);
+    }
+    const entry: LearningEntry = { ...final, id: crypto.randomUUID(), raw, createdAt: new Date().toISOString(), myThought: myThought.trim() };
+    try {
+      onSaveLearning(entry);
+    } catch {
+      setError("저장하지 못했어요. 브라우저 저장 공간을 확인하고 다시 시도해 주세요. 작성한 내용은 그대로 있어요.");
+      return;
+    }
+    setRaw("");
+    setLearning(null);
+    setMyThought("");
+    setAnswers("");
+  }
+
+  function switchMode(next: Mode) {
+    if (loading) return;
+    setMode(next);
+    setStructured(null);
+    setLearning(null);
+    setAnswers("");
+    setError(null);
   }
 
   function editField(k: keyof StructuredRecord, value: string) {
@@ -142,33 +218,58 @@ export default function Recorder({ onSave }: Props) {
 
   function reset() {
     setStructured(null);
+    setLearning(null);
     setAnswers("");
     setError(null);
   }
+
+  const submit = () => (mode === "learning" ? structureLearning(false) : structure(false));
+  const inReview = structured !== null || learning !== null;
+  const examples = mode === "learning" ? LEARN_EXAMPLES : EXAMPLES;
+  const exampleLabels = mode === "learning" ? LEARN_EXAMPLE_LABELS : EXAMPLE_LABELS;
 
   const canSave = structured !== null && structured.missing.length === 0;
 
   return (
     <section className="record-card" aria-label="새 기록 남기기" aria-busy={loading}>
-      <div className="composer-topline"><span><AppIcon name="write" width="16" height="16" />새로운 기록</span><div className="record-progress" aria-label={structured ? "2단계: 내용 확인" : "1단계: 기록 작성"}><span className={!structured ? "current" : ""}>작성</span><AppIcon name="chevron" width="11" height="11" /><span className={structured ? "current" : ""}>확인</span></div></div>
-      {!structured ? (
+      <div className="composer-topline">
+        <div className="mode-switch" role="tablist" aria-label="기록 종류">
+          <button type="button" role="tab" aria-selected={mode === "event"} className={mode === "event" ? "is-active" : ""} disabled={loading} onClick={() => switchMode("event")}><AppIcon name="write" width="14" height="14" />있었던 일</button>
+          <button type="button" role="tab" aria-selected={mode === "learning"} className={mode === "learning" ? "is-active" : ""} disabled={loading} onClick={() => switchMode("learning")}><AppIcon name="book" width="14" height="14" />배운 것</button>
+        </div>
+        <div className="record-progress" aria-label={inReview ? "2단계: 내용 확인" : "1단계: 기록 작성"}><span className={!inReview ? "current" : ""}>작성</span><AppIcon name="chevron" width="11" height="11" /><span className={inReview ? "current" : ""}>확인</span></div>
+      </div>
+      {learning ? (
+        <LearningReview
+          data={learning}
+          myThought={myThought}
+          answers={answers}
+          loading={loading}
+          onChange={setLearning}
+          onThought={setMyThought}
+          onAnswers={setAnswers}
+          onApplyAnswers={() => structureLearning(true)}
+          onReset={reset}
+          onSave={saveLearning}
+        />
+      ) : !structured ? (
         <>
-          <div className="record-card-heading"><h2>지금, 남겨두기</h2><p>다듬지 않아도 돼요. 기억나는 그대로 적어요.</p></div>
+          <div className="record-card-heading">{mode === "learning" ? <><h2>방금 배운 것, 남겨두기</h2><p>쇼츠·책·강의에서 건진 한 줄. 출처만 같이 적어주면 좋아요.</p></> : <><h2>지금, 남겨두기</h2><p>다듬지 않아도 돼요. 기억나는 그대로 적어요.</p></>}</div>
           <label htmlFor="record-raw" className="sr-only">기록 내용</label>
           <textarea
             id="record-raw"
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
-            placeholder="오늘 있었던 일, 잊고 싶지 않은 말…"
+            placeholder={mode === "learning" ? "어디서 뭘 봤는지, 핵심이 뭐였는지…" : "오늘 있었던 일, 잊고 싶지 않은 말…"}
             rows={5}
             disabled={loading}
             className="record-textarea"
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && raw.trim() && !loading) { e.preventDefault(); structure(false); }
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && raw.trim() && !loading) { e.preventDefault(); submit(); }
             }}
           />
           <div className="examples-row"><span className="examples-title">예시 보기</span>
-            {EXAMPLES.map((ex, index) => (
+            {examples.map((ex, index) => (
               <button
                 key={ex}
                 type="button"
@@ -177,12 +278,12 @@ export default function Recorder({ onSave }: Props) {
                 className="example-chip"
                 title={ex}
               >
-                {EXAMPLE_LABELS[index]}
+                {exampleLabels[index]}
               </button>
             ))}
           </div>
           <div className="record-footer">
-            <div className="file-control">
+            {mode === "event" ? <div className="file-control">
               <input
                 ref={fileRef}
                 type="file"
@@ -192,11 +293,11 @@ export default function Recorder({ onSave }: Props) {
               />
               <button type="button" disabled={loading} onClick={() => fileRef.current?.click()}><AppIcon name="attach" width="15" height="15" />자료 이름 추가</button>
               <span>{files.length > 0 ? `${files.length}개 선택됨 · 이름만 저장` : "사진·녹음의 파일 이름만 기록해요"}</span>
-            </div>
+            </div> : <div className="file-control"><span>영상 링크나 책 제목을 함께 적으면 출처로 정리돼요.</span></div>}
             <button
               type="button"
               disabled={!raw.trim() || loading}
-              onClick={() => structure(false)}
+              onClick={submit}
               className="primary-action"
             >
               {loading ? "정리하는 중…" : "내용 정리하기"}<AppIcon name="arrow" width="17" height="17" />
@@ -206,6 +307,7 @@ export default function Recorder({ onSave }: Props) {
         </>
       ) : (
         <>
+          {structured.kind === "learning" && <div className="kind-hint" role="status"><AppIcon name="book" width="16" height="16" /><span>있었던 일보다 <b>배운 것</b>에 가까워 보여요. 출처·핵심 주장·태그로 정리할까요?</span><button type="button" disabled={loading} onClick={() => { setMode("learning"); structureLearning(false); }}>배운 것으로 정리</button></div>}
           <div className="review-intro"><div><h2>이렇게 정리했어요</h2><p>맞는지 확인하고 보관함에 남겨주세요.</p></div><span className="category-pill">{structured.category}</span></div>
           <p className="review-summary">{structured.summary}</p>
           <p className="review-help">저장 후에는 수정할 수 없어요. 빈 칸은 직접 채우거나 ‘없음’·‘기억 안 남’을 눌러 확인해 주세요.</p>

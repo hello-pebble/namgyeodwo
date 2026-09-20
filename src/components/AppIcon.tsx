@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type IconName = "write" | "archive" | "report" | "help" | "chevron" | "arrow" | "search" | "attach" | "check" | "close" | "download" | "lock" | "calendar" | "trash";
+export type IconName = "write" | "archive" | "report" | "help" | "chevron" | "arrow" | "search" | "attach" | "check" | "close" | "download" | "lock" | "calendar" | "trash" | "book" | "tag";
 
 const paths: Record<IconName, React.ReactNode> = {
   write: <><path d="m15 4 5 5M5 19l4-1L20 7a2 2 0 0 0-5-5L4 13l-1 5Z" /><path d="M13 20h8" /></>,
@@ -17,6 +17,8 @@ const paths: Record<IconName, React.ReactNode> = {
   lock: <><rect x="5" y="10" width="14" height="11" rx="3" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" /></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M7 3v4m10-4v4M3 11h18M7 15h3m4 0h3" /></>,
   trash: <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" /></>,
+  book: <><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z" /><path d="M4 19V5m4-2v16" /></>,
+  tag: <><path d="M3 12V4h8l9 9-8 8Z" /><circle cx="7.5" cy="8.5" r="1.2" /></>,
 };
 
 export default function AppIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {

@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Recorder from "@/components/Recorder";
 import Timeline from "@/components/Timeline";
 import AppIcon from "@/components/AppIcon";
-import { loadRecords, saveRecords } from "@/lib/storage";
-import type { RecordEntry } from "@/lib/types";
+import { loadLearnings, loadRecords, saveLearnings, saveRecords } from "@/lib/storage";
+import type { LearningEntry, RecordEntry } from "@/lib/types";
 
 export default function Home() {
+  return <Suspense fallback={null}><HomeInner /></Suspense>;
+}
+
+function HomeInner() {
+  const params = useSearchParams();
+  const initialMode = params.get("mode") === "learning" ? "learning" : "event";
+  const [learnCount, setLearnCount] = useState(0);
   const [records, setRecords] = useState<RecordEntry[]>([]);
   const [ready, setReady] = useState(false);
   const [date, setDate] = useState("");
@@ -18,6 +26,7 @@ export default function Home() {
 
   useEffect(() => {
     setRecords(loadRecords());
+    setLearnCount(loadLearnings().length);
     setDate(new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" }));
     setReady(true);
   }, []);
@@ -25,6 +34,13 @@ export default function Home() {
   function update(next: RecordEntry[]) {
     saveRecords(next);
     setRecords(next);
+  }
+
+  function addLearning(entry: LearningEntry) {
+    const next = [entry, ...loadLearnings()];
+    saveLearnings(next);
+    setLearnCount(next.length);
+    setSaved(true);
   }
 
   return <div className="home-page">
@@ -36,13 +52,14 @@ export default function Home() {
       <div className="penguin-caption" aria-hidden="true">기록할 준비 완료!</div>
     </section>
 
-    {saved && <div className="saved-message" role="status"><AppIcon name="check" /><span>잘 남겨뒀어! 보관함에서 언제든 꺼내봐.</span><button type="button" aria-label="저장 알림 닫기" onClick={() => setSaved(false)}><AppIcon name="close" width="16" height="16" /></button></div>}
+    {saved && <div className="saved-message" role="status"><AppIcon name="check" /><span>잘 남겨뒀어! 보관함이나 배운 것에서 언제든 꺼내봐.</span><button type="button" aria-label="저장 알림 닫기" onClick={() => setSaved(false)}><AppIcon name="close" width="16" height="16" /></button></div>}
     {error && <p className="form-error" role="alert">{error}</p>}
     <div className="home-workspace">
-      <Recorder onSave={(entry) => { update([entry, ...records]); setSaved(true); }} />
+      <Recorder initialMode={initialMode} onSave={(entry) => { update([entry, ...records]); setSaved(true); }} onSaveLearning={addLearning} />
       <aside className="recent-panel" aria-labelledby="recent-title">
         <div className="panel-heading"><h2 id="recent-title">최근 기록 <span>{ready ? records.length : 0}</span></h2><Link href="/records" className="subtle-link">전체 보기<AppIcon name="chevron" width="14" height="14" /></Link></div>
         {ready && <Timeline compact records={records.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3)} onDelete={(id) => { if (window.confirm("이 기록을 삭제할까요? 삭제하면 되돌릴 수 없습니다.")) { try { update(records.filter((record) => record.id !== id)); } catch { setError("기록을 삭제하지 못했어요. 브라우저 저장 공간을 확인해 주세요."); } } }} />}
+        <Link href="/learn" className="report-shortcut learn-shortcut"><span className="report-shortcut-icon"><AppIcon name="book" /></span><span><strong>배운 것 {learnCount > 0 ? `${learnCount}개` : ""}</strong><small>쇼츠·책에서 건진 것도 여기에</small></span><AppIcon name="chevron" width="16" height="16" /></Link>
         <Link href="/report" className="report-shortcut"><span className="report-shortcut-icon"><AppIcon name="report" /></span><span><strong>모아서 보면 또 달라요</strong><small>남겨둔 기록을 리포트로 정리하기</small></span><AppIcon name="chevron" width="16" height="16" /></Link>
       </aside>
     </div>

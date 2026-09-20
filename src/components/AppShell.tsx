@@ -7,6 +7,7 @@ import AppIcon, { type IconName } from "./AppIcon";
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "기록하기", icon: "write" },
   { href: "/records", label: "보관함", icon: "archive" },
+  { href: "/learn", label: "배운 것", icon: "book" },
   { href: "/report", label: "리포트", icon: "report" },
 ];
 

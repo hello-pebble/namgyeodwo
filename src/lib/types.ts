@@ -25,6 +25,8 @@ export interface StructuredRecord {
   missing: Array<keyof Pick<StructuredRecord, "when" | "where" | "who" | "what" | "quote" | "witnesses" | "evidence">>;
   /** 빠진 항목에 대한 되묻기 (최대 3개) */
   questions: string[];
+  /** AI가 판별한 입력 종류 (learning이면 '배운 것'으로 정리 제안) */
+  kind?: RecordKind;
 }
 
 export interface RecordEntry extends StructuredRecord {
@@ -50,3 +52,41 @@ export interface PatternReport {
   draft: string;
   disclaimer: string;
 }
+
+/* ---------- 배운 것 기록 ---------- */
+
+export type LearningTopic =
+  | "개발·기술"
+  | "커리어·업무"
+  | "돈·재테크"
+  | "건강·생활"
+  | "인문·교양"
+  | "취미·관심사"
+  | "기타";
+
+export interface StructuredLearning {
+  /** 한 줄 제목 */
+  title: string;
+  /** 출처: 채널·영상·책·사람·링크 (사용자가 말한 대로) */
+  source: string;
+  /** 핵심 주장 한 문장 */
+  claim: string;
+  /** 기억할 포인트 2~5개 */
+  points: string[];
+  /** 짧은 태그 2~5개 */
+  tags: string[];
+  topic: LearningTopic;
+  missing: Array<"source" | "claim">;
+  questions: string[];
+}
+
+export interface LearningEntry extends StructuredLearning {
+  id: string;
+  raw: string;
+  createdAt: string;
+  /** 내 생각·어디에 써먹을지 (선택) */
+  myThought: string;
+}
+
+/** /api/structure 가 입력을 '배운 것'으로 판단했을 때의 힌트 */
+export type RecordKind = "event" | "learning";
