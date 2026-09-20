@@ -1,6 +1,7 @@
 "use client";
 
 import AppIcon from "./AppIcon";
+import RelatedBox from "./RelatedBox";
 import type { StructuredLearning } from "@/lib/types";
 
 interface Props {
@@ -32,6 +33,7 @@ export default function LearningReview({ data, myThought, answers, loading, onCh
 
   return <>
     <div className="review-intro"><div><h2>이렇게 정리했어요</h2><p>맞는지 확인하고 배운 것 보관함에 남겨주세요.</p></div><span className="category-pill">{data.topic}</span></div>
+    <RelatedBox items={data.related ?? []} title="전에 남긴 배운 것과 연결돼요" />
     <p className="review-help">저장 후에는 수정할 수 없어요. 출처를 모르면 ‘출처 모름’을 눌러 확인해 주세요.</p>
     <dl className="review-fields">
       <div className="review-field"><dt>제목</dt><dd><input disabled={loading} aria-label="제목" value={data.title} onChange={(e) => setField("title", e.target.value)} /></dd></div>

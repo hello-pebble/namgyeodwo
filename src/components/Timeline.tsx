@@ -1,6 +1,7 @@
 "use client";
 
 import AppIcon from "./AppIcon";
+import RelatedBox from "./RelatedBox";
 import type { RecordEntry } from "@/lib/types";
 
 function formatWhen(value: string) {
@@ -27,6 +28,7 @@ export default function Timeline({ records, onDelete, compact = false, filtered 
         <div className="record-details"><dl>{([
           ["일시", record.when], ["장소", record.where], ["관련자", record.who], ["내용", record.what], ["기억할 말", record.quote], ["함께한 사람", record.witnesses], ["남은 자료", record.evidence],
         ] as const).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "미상"}</dd></div>)}</dl>
+          <RelatedBox compact items={record.related ?? []} title="이 일에 써먹을 수 있는 배운 것" />
           <div className="original-note"><h4>처음 남긴 글</h4><p>{record.raw}</p></div>
           {record.attachments.length > 0 && <p className="record-attachments"><AppIcon name="attach" width="13" height="13" />자료 이름: {record.attachments.join(", ")}</p>}
           <div className="timeline-bottom"><span>남긴 시각 {new Date(record.createdAt).toLocaleString("ko-KR")}</span><button type="button" onClick={() => onDelete(record.id)} aria-label={`${record.summary} 삭제`}><AppIcon name="trash" width="13" height="13" />삭제</button></div>

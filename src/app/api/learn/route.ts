@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/gemini";
-import type { StructuredLearning } from "@/lib/types";
+import type { ContextItem, StructuredLearning } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -17,12 +17,13 @@ const SYSTEM = `당신은 사용자가 영상·글·강의·대화에서 '배운
 7. topic: 다음 중 하나: 개발·기술, 커리어·업무, 돈·재테크, 건강·생활, 인문·교양, 취미·관심사, 기타
 8. questions: missing이 있을 때만, 최대 2개. 예) "어디서 본 내용인지 채널이나 제목 기억나세요?", "한 문장으로 하면 결론이 뭐였나요?"
 9. 판단하거나 평가하지 마세요. 정리만 하세요.
+10. related: [기존 배운 것 목록]이 주어지면, 이번 내용과 실제로 관련된 항목만 최대 3개 고르세요. relation은 same(같은 얘기·중복), opposite(반대되는 주장), builds(이어지거나 보완하는 내용) 중 하나. reason은 한 문장(30자 이내), 예) "PR 크기 얘기와 같은 결론". 관련 없으면 빈 배열 []. 억지로 연결하지 마세요. id는 목록의 id를 그대로.
 
 응답은 아래 JSON만 출력:
-{ "title": string, "source": string, "claim": string, "points": string[], "tags": string[], "topic": string, "missing": string[], "questions": string[] }`;
+{ "title": string, "source": string, "claim": string, "points": string[], "tags": string[], "topic": string, "missing": string[], "questions": string[], "related": [{ "id": string, "title": string, "relation": "same"|"opposite"|"builds", "reason": string }] }`;
 
 const FINALIZE = `당신은 지식 카드 교정자입니다. 아래 JSON의 각 필드에서 오타·맞춤법·띄어쓰기만 고칩니다.
-의미·단어·주장을 바꾸지 마세요. 내용 추가·삭제 금지. "미상", "출처 모름" 값은 그대로. missing은 [], questions는 []로 출력.
+의미·단어·주장을 바꾸지 마세요. 내용 추가·삭제 금지. "미상", "출처 모름" 값은 그대로. related는 그대로 유지. missing은 [], questions는 []로 출력.
 응답은 입력과 같은 JSON 스키마만 출력.`;
 
 interface Body {
@@ -30,6 +31,8 @@ interface Body {
   previous?: StructuredLearning;
   answers?: string;
   finalize?: boolean;
+  /** 기존 배운 것 요약 (연결 찾기용) */
+  context?: ContextItem[];
 }
 
 export async function POST(req: Request) {
@@ -55,6 +58,7 @@ export async function POST(req: Request) {
   const parts = [`[사용자 원문]\n${body.raw}`];
   if (body.previous) parts.push(`\n[이전 정리 결과]\n${JSON.stringify(body.previous)}`);
   if (body.answers?.trim()) parts.push(`\n[빠진 항목에 대한 사용자의 추가 답변]\n${body.answers}\n이 답변을 반영해 다시 정리하고, 채워진 항목은 missing과 questions에서 제거하세요.`);
+  if (body.context?.length) parts.push(`\n[기존 배운 것 목록]\n${JSON.stringify(body.context)}`);
 
   try {
     const result = await generateJson<StructuredLearning>(SYSTEM, parts.join("\n"));

@@ -1,4 +1,4 @@
-import type { LearningEntry, RecordEntry } from "./types";
+import type { ContextItem, LearningEntry, RecordEntry } from "./types";
 
 const KEY = "namgyeodwo:records:v1";
 const LEARN_KEY = "namgyeodwo:learnings:v1";
@@ -45,4 +45,16 @@ export function exportJson(records: RecordEntry[]) {
 
 export function exportLearningsJson(items: LearningEntry[]) {
   download(`namgyeodwo-learnings-${new Date().toISOString().slice(0, 10)}.json`, items);
+}
+
+/**
+ * AI에 함께 보낼 기존 '배운 것' 요약. 최신순 최대 limit개, 각 항목은 짧게.
+ * 서버는 기록을 저장하지 않으므로 연결 찾기는 요청마다 클라이언트가 문맥을 실어 보낸다.
+ */
+export function buildLearningContext(limit = 120): ContextItem[] {
+  return loadLearnings()
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit)
+    .map((i) => ({ id: i.id, title: i.title.slice(0, 40), tags: i.tags.slice(0, 5), claim: i.claim.slice(0, 60) }));
 }

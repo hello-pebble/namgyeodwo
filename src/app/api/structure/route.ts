@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateJson } from "@/lib/gemini";
-import type { StructuredRecord } from "@/lib/types";
+import type { ContextItem, StructuredRecord } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -20,9 +20,12 @@ const SYSTEM = `당신은 '있었던 일'을 나중에 다시 꺼내 쓸 수 있
 9. 위로하거나 판단하지 마세요. 정리만 하세요.
 10. kind 판별: 입력이 '나에게 일어난 일·들은 말·약속'이 아니라 '영상·책·글·강의에서 배운 내용, 팁, 지식, 인용'이면 kind를 "learning"으로, 아니면 "event"로 표시하세요. 예) "쇼츠에서 봤는데 PR은 300줄 이하로 쪼개라더라" → learning / "팀장이 PR 300줄 이하로 쪼개라고 했다" → event. 애매하면 event. learning이어도 나머지 필드는 최선을 다해 채우세요.
 
+11. related: [사용자가 배운 것 목록]이 주어지면, 이번 일에 실제로 써먹을 수 있는 항목만 최대 2개 고르세요. relation은 "applies". reason은 한 문장(30자 이내), 예) "팀장 지시가 이 원칙과 충돌". 관련 없으면 빈 배열 []. 억지로 연결하지 마세요. id는 목록의 id를 그대로.
+
 응답은 아래 JSON 스키마만 출력:
 {
   "kind": "event" | "learning",
+  "related": [{ "id": string, "title": string, "relation": "applies", "reason": string }],
   "when": string, "where": string, "who": string, "what": string, "quote": string,
   "witnesses": string, "evidence": string, "category": string, "summary": string,
   "missing": string[], "questions": string[]
@@ -33,7 +36,7 @@ const FINALIZE = `당신은 기록 교정자입니다. 아래 JSON의 각 필드
 절대 규칙:
 1. 의미·사실·표현 수위를 바꾸지 마세요. 단어를 다른 단어로 바꾸거나 문장을 다듬지 마세요. 내용 추가·삭제 금지.
 2. quote(발언 원문)는 사투리·비속어·말투를 그대로 두고, 오타만 고치세요.
-3. "없음", "기억 안 남", "미상" 값은 그대로 두세요.
+3. "없음", "기억 안 남", "미상" 값은 그대로 두세요. related, kind는 그대로 유지.
 4. when은 형식만 확인(YYYY-MM-DD 또는 YYYY-MM-DDTHH:mm). 값 변경 금지.
 5. missing은 [], questions는 []로 출력.
 6. 고칠 게 없으면 입력 그대로 출력.
@@ -47,6 +50,8 @@ interface Body {
   now?: string;
   /** 저장 직전 교정 모드 */
   finalize?: boolean;
+  /** 사용자가 배운 것 요약 (써먹을 것 찾기용) */
+  context?: ContextItem[];
 }
 
 export async function POST(req: Request) {
@@ -79,6 +84,7 @@ export async function POST(req: Request) {
   if (body.answers?.trim()) {
     parts.push(`\n[빠진 항목에 대한 사용자의 추가 답변]\n${body.answers}\n이 답변을 반영해 다시 정리하고, 답변으로 채워진 항목은 missing과 questions에서 제거하세요.`);
   }
+  if (body.context?.length) parts.push(`\n[사용자가 배운 것 목록]\n${JSON.stringify(body.context)}`);
 
   try {
     const result = await generateJson<StructuredRecord>(SYSTEM, parts.join("\n"));

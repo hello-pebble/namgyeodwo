@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import RelatedBox from "@/components/RelatedBox";
 import AppIcon from "@/components/AppIcon";
 import { exportLearningsJson, loadLearnings, saveLearnings } from "@/lib/storage";
 import type { LearningEntry } from "@/lib/types";
@@ -9,6 +11,11 @@ import type { LearningEntry } from "@/lib/types";
 const TOPIC_ORDER = ["개발·기술", "커리어·업무", "돈·재테크", "건강·생활", "인문·교양", "취미·관심사", "기타"];
 
 export default function LearnPage() {
+  return <Suspense fallback={null}><LearnInner /></Suspense>;
+}
+
+function LearnInner() {
+  const focus = useSearchParams().get("focus");
   const [items, setItems] = useState<LearningEntry[]>([]);
   const [ready, setReady] = useState(false);
   const [search, setSearch] = useState("");
@@ -17,6 +24,11 @@ export default function LearnPage() {
   const [error, setError] = useState("");
 
   useEffect(() => { setItems(loadLearnings()); setReady(true); }, []);
+  useEffect(() => {
+    if (!ready || !focus) return;
+    const el = document.getElementById(`learn-${focus}`);
+    if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("is-focused"); }
+  }, [ready, focus]);
 
   const topics = ["전체", ...TOPIC_ORDER.filter((t) => items.some((i) => i.topic === t))];
   const tagCounts = useMemo(() => {
@@ -53,11 +65,12 @@ export default function LearnPage() {
     {grouped.map(([t, list]) => <section key={t} className="wiki-section" aria-label={t}>
       <h2 className="wiki-topic">{t} <span>{list.length}</span></h2>
       <div className="wiki-grid">
-        {list.map((i) => <article key={i.id} className="wiki-card">
+        {list.map((i) => <article key={i.id} id={`learn-${i.id}`} className="wiki-card">
           <header><h3>{i.title}</h3><span className="record-date">{new Date(i.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span></header>
           <p className="wiki-claim">{i.claim}</p>
           {i.points.length > 0 && <ul className="wiki-points">{i.points.map((p) => <li key={p}>{p}</li>)}</ul>}
           {i.myThought && <p className="wiki-thought"><b>내 생각</b> {i.myThought}</p>}
+          <RelatedBox compact items={(i.related ?? []).filter((r) => items.some((x) => x.id === r.id))} title="연결" />
           <footer>
             <span className="wiki-source" title={i.source}>{/^https?:\/\//.test(i.source) ? <a href={i.source} target="_blank" rel="noreferrer">{i.source.replace(/^https?:\/\/(www\.)?/, "").slice(0, 40)}</a> : i.source}</span>
             <span className="wiki-tags">{i.tags.map((tg) => <button key={tg} type="button" onClick={() => setTag(tag === tg ? null : tg)} className={tag === tg ? "is-selected" : ""}>#{tg}</button>)}</span>

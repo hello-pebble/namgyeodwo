@@ -27,6 +27,8 @@ export interface StructuredRecord {
   questions: string[];
   /** AI가 판별한 입력 종류 (learning이면 '배운 것'으로 정리 제안) */
   kind?: RecordKind;
+  /** 이 일에 써먹을 수 있는 기존 '배운 것' */
+  related?: RelatedHint[];
 }
 
 export interface RecordEntry extends StructuredRecord {
@@ -78,6 +80,25 @@ export interface StructuredLearning {
   topic: LearningTopic;
   missing: Array<"source" | "claim">;
   questions: string[];
+  /** 기존 배운 것과의 연결 */
+  related?: RelatedHint[];
+}
+
+/** AI가 찾은 기존 기록과의 연결 */
+export interface RelatedHint {
+  id: string;
+  title: string;
+  /** same: 같은 얘기 · opposite: 반대 주장 · builds: 이어지는/보완 · applies: 이 일에 써먹을 수 있음 */
+  relation: "same" | "opposite" | "builds" | "applies";
+  reason: string;
+}
+
+/** 요청에 실어 보내는 기존 기록 요약 */
+export interface ContextItem {
+  id: string;
+  title: string;
+  tags: string[];
+  claim: string;
 }
 
 export interface LearningEntry extends StructuredLearning {

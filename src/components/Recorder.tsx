@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import LearningReview from "./LearningReview";
+import RelatedBox from "./RelatedBox";
+import { buildLearningContext } from "@/lib/storage";
 import type { LearningEntry, RecordEntry, StructuredLearning, StructuredRecord } from "@/lib/types";
 
 type Mode = "event" | "learning";
@@ -89,6 +91,7 @@ export default function Recorder({ onSave, onSaveLearning, initialMode = "event"
           previous: withAnswers ? structured : undefined,
           answers: withAnswers ? answers : undefined,
           now: localNow(),
+          context: buildLearningContext(),
         }),
       });
       const data = await res.json();
@@ -109,7 +112,7 @@ export default function Recorder({ onSave, onSaveLearning, initialMode = "event"
       const res = await fetch("/api/learn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw, previous: withAnswers ? learning : undefined, answers: withAnswers ? answers : undefined }),
+        body: JSON.stringify({ raw, previous: withAnswers ? learning : undefined, answers: withAnswers ? answers : undefined, context: buildLearningContext() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "실패");
@@ -135,7 +138,7 @@ export default function Recorder({ onSave, onSaveLearning, initialMode = "event"
         body: JSON.stringify({ raw, previous: learning, finalize: true }),
       });
       const data = await res.json();
-      if (res.ok) final = { ...(data as StructuredLearning), missing: [], questions: [] };
+      if (res.ok) final = { ...(data as StructuredLearning), related: learning.related ?? [], missing: [], questions: [] };
     } catch {
       /* 교정 생략 */
     } finally {
@@ -189,7 +192,7 @@ export default function Recorder({ onSave, onSaveLearning, initialMode = "event"
         body: JSON.stringify({ raw, previous: structured, finalize: true, now: localNow() }),
       });
       const data = await res.json();
-      if (res.ok) final = { ...(data as StructuredRecord), missing: [], questions: [] };
+      if (res.ok) final = { ...(data as StructuredRecord), related: structured.related ?? [], kind: structured.kind, missing: [], questions: [] };
       // 교정 실패(서버 붐빔 등)여도 사용자가 확인한 내용 그대로 저장
     } catch {
       /* 교정 생략 */
@@ -310,6 +313,7 @@ export default function Recorder({ onSave, onSaveLearning, initialMode = "event"
           {structured.kind === "learning" && <div className="kind-hint" role="status"><AppIcon name="book" width="16" height="16" /><span>있었던 일보다 <b>배운 것</b>에 가까워 보여요. 출처·핵심 주장·태그로 정리할까요?</span><button type="button" disabled={loading} onClick={() => { setMode("learning"); structureLearning(false); }}>배운 것으로 정리</button></div>}
           <div className="review-intro"><div><h2>이렇게 정리했어요</h2><p>맞는지 확인하고 보관함에 남겨주세요.</p></div><span className="category-pill">{structured.category}</span></div>
           <p className="review-summary">{structured.summary}</p>
+          <RelatedBox items={structured.related ?? []} title="이 일에 써먹을 수 있는 배운 것" />
           <p className="review-help">저장 후에는 수정할 수 없어요. 빈 칸은 직접 채우거나 ‘없음’·‘기억 안 남’을 눌러 확인해 주세요.</p>
           <dl className="review-fields">
             {(["when", "where", "who", "what", "quote", "witnesses", "evidence"] as const).map((k) => {
